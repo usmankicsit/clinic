@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { BlogPost } from './blogs/blog-post.entity';
 import { BlogsModule } from './blogs/blogs.module';
@@ -27,31 +27,32 @@ import { TeamModule } from './team/team.module';
 import { User } from './users/user.entity';
 import { UsersModule } from './users/users.module';
 
+const entities = [
+  User,
+  Category,
+  Product,
+  Inventory,
+  Order,
+  OrderItem,
+  ShopSettings,
+  ProductReview,
+  OrderClaim,
+  BlogPost,
+  TeamMember,
+];
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: (config: ConfigService): TypeOrmModuleOptions => {
         const databaseUrl = config.get<string>('DATABASE_URL');
-        const entities = [
-          User,
-          Category,
-          Product,
-          Inventory,
-          Order,
-          OrderItem,
-          ShopSettings,
-          ProductReview,
-          OrderClaim,
-          BlogPost,
-          TeamMember,
-        ];
 
         if (databaseUrl) {
           return {
-            type: 'postgres' as const,
+            type: 'postgres',
             url: databaseUrl,
             ssl: { rejectUnauthorized: false },
             entities,
@@ -60,12 +61,12 @@ import { UsersModule } from './users/users.module';
         }
 
         return {
-          type: 'postgres' as const,
-          host: config.get('DATABASE_HOST', 'localhost'),
-          port: Number(config.get('DATABASE_PORT', 5432)),
-          username: config.get('DATABASE_USER', 'clinic'),
-          password: config.get('DATABASE_PASSWORD', 'clinic'),
-          database: config.get('DATABASE_NAME', 'clinic_pos'),
+          type: 'postgres',
+          host: String(config.get<string>('DATABASE_HOST') ?? 'localhost'),
+          port: Number(config.get<string>('DATABASE_PORT') ?? 5432),
+          username: String(config.get<string>('DATABASE_USER') ?? 'clinic'),
+          password: String(config.get<string>('DATABASE_PASSWORD') ?? 'clinic'),
+          database: String(config.get<string>('DATABASE_NAME') ?? 'clinic_pos'),
           entities,
           synchronize: true,
         };
