@@ -179,7 +179,7 @@ export function AuthForm({
   error?: string;
 }) {
   return (
-    <form className="form-grid auth-form" onSubmit={onSubmit}>
+    <form className="form-grid auth-form" onSubmit={onSubmit} autoComplete="off">
       {error && <div className="error">{error}</div>}
       {children}
       <button className="btn btn-primary auth-submit" type="submit" disabled={submitting}>

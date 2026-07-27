@@ -32,8 +32,8 @@ const STAFF_ACCOUNTS: DemoAccount[] = [
 export default function LoginPage() {
   const { login, user, loading } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState(STAFF_ACCOUNTS[0].email);
-  const [password, setPassword] = useState(STAFF_ACCOUNTS[0].password);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
       brand="Bait Al Shifa"
       tagline="Clinic workspace"
       title="Staff sign in"
-      subtitle="Choose a role below or enter your credentials."
+      subtitle="Enter your staff email and password to continue."
       variant="staff"
       footer={
         <AuthLinks>
@@ -100,7 +100,7 @@ export default function LoginPage() {
           type="email"
           value={email}
           onChange={setEmail}
-          autoComplete="username"
+          autoComplete="off"
           required
           placeholder="you@clinic.health"
         />
@@ -110,7 +110,7 @@ export default function LoginPage() {
           type="password"
           value={password}
           onChange={setPassword}
-          autoComplete="current-password"
+          autoComplete="new-password"
           required
         />
       </AuthForm>

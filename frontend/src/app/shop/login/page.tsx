@@ -28,8 +28,8 @@ function ShopLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/shop/dashboard';
-  const [email, setEmail] = useState(CUSTOMER_ACCOUNT[0].email);
-  const [password, setPassword] = useState(CUSTOMER_ACCOUNT[0].password);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -98,7 +98,7 @@ function ShopLoginForm() {
           type="email"
           value={email}
           onChange={setEmail}
-          autoComplete="username"
+          autoComplete="off"
           required
           placeholder="you@email.com"
         />
@@ -108,7 +108,7 @@ function ShopLoginForm() {
           type="password"
           value={password}
           onChange={setPassword}
-          autoComplete="current-password"
+          autoComplete="new-password"
           required
         />
       </AuthForm>
