@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Pusher from 'pusher-js';
+import { io, Socket } from 'socket.io-client';
 import { money } from '@/lib/format';
 
 export type OnlineOrderAlert = {
@@ -14,20 +14,28 @@ export type OnlineOrderAlert = {
   createdAt?: string;
 };
 
+const API_ORIGIN = (
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+).replace(/\/$/, '');
+
 export function useOnlineOrderAlerts(enabled: boolean) {
   const router = useRouter();
   const [alert, setAlert] = useState<OnlineOrderAlert | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
-    const key = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const cluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'mt1';
-    if (!key) return;
 
-    const pusher = new Pusher(key, { cluster });
-    const channel = pusher.subscribe('staff-orders');
-    channel.bind('online-order', (data: OnlineOrderAlert) => {
+    const socket: Socket = io(API_ORIGIN, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+    });
+
+    socket.on('connect', () => {
+      socket.emit('join-staff');
+    });
+
+    socket.on('online-order', (data: OnlineOrderAlert) => {
       setAlert(data);
       try {
         if (typeof Notification !== 'undefined') {
@@ -44,14 +52,12 @@ export function useOnlineOrderAlerts(enabled: boolean) {
           }
         }
       } catch {
-        /* ignore notification errors */
+        /* ignore */
       }
     });
 
     return () => {
-      channel.unbind_all();
-      pusher.unsubscribe('staff-orders');
-      pusher.disconnect();
+      socket.disconnect();
     };
   }, [enabled, router]);
 
@@ -69,11 +75,7 @@ export function useOnlineOrderAlerts(enabled: boolean) {
   return { alert, dismiss, openOrder, money };
 }
 
-export function OnlineOrderToast({
-  enabled,
-}: {
-  enabled: boolean;
-}) {
+export function OnlineOrderToast({ enabled }: { enabled: boolean }) {
   const { alert, dismiss, openOrder } = useOnlineOrderAlerts(enabled);
   if (!alert) return null;
 
@@ -82,8 +84,7 @@ export function OnlineOrderToast({
       <div>
         <strong>New online order</strong>
         <p>
-          {alert.orderNumber} · {alert.customerName} ·{' '}
-          {money(alert.total)}
+          {alert.orderNumber} · {alert.customerName} · {money(alert.total)}
         </p>
       </div>
       <div className="inline-actions">
