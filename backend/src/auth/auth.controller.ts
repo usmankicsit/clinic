@@ -7,7 +7,8 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
+import type { CookieOptions, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums';
@@ -22,15 +23,30 @@ import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly config: ConfigService,
+  ) {}
+
+  /** Cross-site (Vercel → Render) needs SameSite=None; Secure. Localhost stays Lax. */
+  private cookieOptions(): CookieOptions {
+    const frontendUrl = this.config.get<string>('FRONTEND_URL', '');
+    const crossSite =
+      Boolean(frontendUrl) &&
+      !frontendUrl.includes('localhost') &&
+      !frontendUrl.includes('127.0.0.1');
+
+    return {
+      httpOnly: true,
+      sameSite: crossSite ? 'none' : 'lax',
+      secure: crossSite,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    };
+  }
 
   private setCookie(res: Response, token: string) {
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('access_token', token, this.cookieOptions());
   }
 
   @Post('login')
@@ -55,7 +71,7 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
+    res.clearCookie('access_token', this.cookieOptions());
     return { ok: true };
   }
 
