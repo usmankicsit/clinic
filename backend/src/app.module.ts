@@ -8,6 +8,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { Category } from './categories/category.entity';
 import { Inventory } from './inventory/inventory.entity';
 import { InventoryModule } from './inventory/inventory.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { OrderItem } from './orders/order-item.entity';
 import { Order } from './orders/order.entity';
 import { OrdersModule } from './orders/orders.module';
@@ -44,6 +45,7 @@ const entities = [
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    NotificationsModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

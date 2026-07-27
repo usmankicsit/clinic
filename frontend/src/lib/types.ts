@@ -1,11 +1,6 @@
 export type UserRole = 'SUPER_ADMIN' | 'CASHIER' | 'CUSTOMER';
 
-export type OrderStatus =
-  | 'PENDING'
-  | 'PREPARING'
-  | 'READY'
-  | 'COMPLETED'
-  | 'CANCELLED';
+export type OrderStatus = 'PENDING' | 'DONE' | 'CANCELLED';
 
 export type PaymentMethod = 'CASH' | 'CARD';
 

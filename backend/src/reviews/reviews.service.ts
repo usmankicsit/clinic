@@ -29,7 +29,7 @@ export class ReviewsService {
     if (order.createdById !== userId) {
       throw new ForbiddenException('Not your order');
     }
-    if (order.status !== OrderStatus.COMPLETED && order.status !== OrderStatus.READY) {
+    if (order.status !== OrderStatus.DONE) {
       throw new BadRequestException(
         'You can review products after the order is ready or completed',
       );

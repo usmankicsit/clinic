@@ -19,10 +19,20 @@ export default function MenuPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState('');
   const [catName, setCatName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editCatName, setEditCatName] = useState('');
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [availabilityFilter, setAvailabilityFilter] = useState('ALL');
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    price: '',
+    categoryId: '',
+    description: '',
+  });
   const [deleting, setDeleting] = useState(false);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [newProductImage, setNewProductImage] = useState<File | null>(null);
@@ -85,6 +95,38 @@ export default function MenuPage() {
     }
   }
 
+  async function saveCategoryEdit(e: FormEvent) {
+    e.preventDefault();
+    if (!editingCategory) return;
+    setError('');
+    try {
+      await api(`/categories/${editingCategory.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: editCatName }),
+      });
+      setEditingCategory(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to update category');
+    }
+  }
+
+  async function confirmDeleteCategory() {
+    if (!categoryToDelete) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await api(`/categories/${categoryToDelete.id}`, { method: 'DELETE' });
+      setCategoryToDelete(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to delete category');
+      setCategoryToDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function addProduct(e: FormEvent) {
     e.preventDefault();
     setError('');
@@ -122,6 +164,37 @@ export default function MenuPage() {
           ? err.message
           : 'Failed to add product',
       );
+    }
+  }
+
+  function startEditProduct(p: Product) {
+    setEditingProduct(p);
+    setEditForm({
+      name: p.name,
+      price: String(p.price),
+      categoryId: p.categoryId,
+      description: p.description || '',
+    });
+  }
+
+  async function saveProductEdit(e: FormEvent) {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setError('');
+    try {
+      await api(`/products/${editingProduct.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: editForm.name,
+          price: Number(editForm.price),
+          categoryId: editForm.categoryId,
+          description: editForm.description || null,
+        }),
+      });
+      setEditingProduct(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to update product');
     }
   }
 
@@ -194,11 +267,11 @@ export default function MenuPage() {
       <div className="stack-gap">
         <div className="card-panel">
           <h2 style={{ marginTop: 0, fontFamily: 'var(--font-display)' }}>
-            Add category
+            Categories
           </h2>
           <form className="form-grid" onSubmit={addCategory}>
             <div className="form-row">
-              <label>Name</label>
+              <label>New category name</label>
               <input
                 value={catName}
                 onChange={(e) => setCatName(e.target.value)}
@@ -209,7 +282,71 @@ export default function MenuPage() {
               Add category
             </button>
           </form>
+          <div className="table-scroll" style={{ marginTop: 16 }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((c) => (
+                  <tr key={c.id}>
+                    <td>
+                      {editingCategory?.id === c.id ? (
+                        <form
+                          className="inline-actions"
+                          onSubmit={saveCategoryEdit}
+                          style={{ gap: 8 }}
+                        >
+                          <input
+                            value={editCatName}
+                            onChange={(e) => setEditCatName(e.target.value)}
+                            required
+                          />
+                          <button className="btn btn-primary" type="submit">
+                            Save
+                          </button>
+                          <button
+                            className="btn"
+                            type="button"
+                            onClick={() => setEditingCategory(null)}
+                          >
+                            Cancel
+                          </button>
+                        </form>
+                      ) : (
+                        c.name
+                      )}
+                    </td>
+                    <td>{c.isActive ? 'Yes' : 'No'}</td>
+                    <td>
+                      <div className="inline-actions">
+                        <IconButton
+                          label="Edit category"
+                          icon="edit"
+                          onClick={() => {
+                            setEditingCategory(c);
+                            setEditCatName(c.name);
+                          }}
+                        />
+                        <IconButton
+                          label="Delete category"
+                          icon="trash"
+                          variant="danger"
+                          onClick={() => setCategoryToDelete(c)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+
         <div className="card-panel">
           <h2 style={{ marginTop: 0, fontFamily: 'var(--font-display)' }}>
             Add product
@@ -300,6 +437,75 @@ export default function MenuPage() {
             </button>
           </form>
         </div>
+
+        {editingProduct && (
+          <div className="card-panel">
+            <h2 style={{ marginTop: 0, fontFamily: 'var(--font-display)' }}>
+              Edit product
+            </h2>
+            <form className="form-grid" onSubmit={saveProductEdit}>
+              <div className="form-row">
+                <label>Name</label>
+                <input
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <label>Price</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editForm.price}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, price: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <label>Category</label>
+                <CustomSelect
+                  value={editForm.categoryId}
+                  onChange={(v) =>
+                    setEditForm({ ...editForm, categoryId: v })
+                  }
+                  options={categories.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  }))}
+                />
+              </div>
+              <div className="form-row">
+                <label>Description</label>
+                <textarea
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
+                />
+              </div>
+              <div className="inline-actions">
+                <button className="btn btn-primary" type="submit">
+                  Save changes
+                </button>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         <div className="list-panel">
           <div className="list-panel-head">
             <h2>Products</h2>
@@ -357,9 +563,6 @@ export default function MenuPage() {
                           alt={p.name}
                           className="menu-thumb"
                         />
-                        {!hasCustomImage(p) && (
-                          <span className="image-tag">Dummy</span>
-                        )}
                       </div>
                     </td>
                     <td>{p.name}</td>
@@ -368,6 +571,12 @@ export default function MenuPage() {
                     <td>{p.isAvailable ? 'Yes' : 'No'}</td>
                     <td>
                       <div className="inline-actions">
+                        <IconButton
+                          label="Edit product"
+                          icon="edit"
+                          variant="primary"
+                          onClick={() => startEditProduct(p)}
+                        />
                         <IconButton
                           label={p.isAvailable ? 'Disable product' : 'Enable product'}
                           icon="power"
@@ -409,7 +618,6 @@ export default function MenuPage() {
                                   : 'Add image'
                               }
                               icon="image"
-                              variant="primary"
                               disabled={uploadingId === p.id}
                               onClick={() => fileRefs.current[p.id]?.click()}
                             />
@@ -472,7 +680,7 @@ export default function MenuPage() {
         title="Delete product"
         message={
           productToDelete
-            ? `Are you sure you want to delete "${productToDelete.name}"? This cannot be undone. Products used in past orders cannot be deleted.`
+            ? `Delete "${productToDelete.name}"? Products used in past orders cannot be deleted.`
             : ''
         }
         confirmLabel="Delete"
@@ -481,6 +689,22 @@ export default function MenuPage() {
         onConfirm={confirmDeleteProduct}
         onCancel={() => {
           if (!deleting) setProductToDelete(null);
+        }}
+      />
+      <ConfirmDialog
+        open={Boolean(categoryToDelete)}
+        title="Delete category"
+        message={
+          categoryToDelete
+            ? `Delete category "${categoryToDelete.name}"? Only empty categories can be deleted.`
+            : ''
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        busy={deleting}
+        onConfirm={confirmDeleteCategory}
+        onCancel={() => {
+          if (!deleting) setCategoryToDelete(null);
         }}
       />
     </AppShell>

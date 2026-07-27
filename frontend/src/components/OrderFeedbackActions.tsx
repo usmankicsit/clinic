@@ -13,8 +13,7 @@ export function OrderFeedbackActions({
   order: Order;
   onDone?: () => void;
 }) {
-  const canReview =
-    order.status === 'COMPLETED' || order.status === 'READY';
+  const canReview = order.status === 'DONE';
   const canClaim = order.status !== 'CANCELLED';
 
   const [showReview, setShowReview] = useState(false);

@@ -141,17 +141,7 @@ button {
   border-color: rgba(196, 160, 58, 0.45);
 }
 
-.status-chip-PREPARING.has-count {
-  background: rgba(2, 126, 1, 0.22);
-  border-color: rgba(2, 126, 1, 0.5);
-}
-
-.status-chip-READY.has-count {
-  background: rgba(111, 158, 106, 0.22);
-  border-color: rgba(111, 158, 106, 0.5);
-}
-
-.status-chip-COMPLETED.has-count {
+.status-chip-DONE.has-count {
   background: rgba(111, 158, 106, 0.32);
   border-color: rgba(111, 158, 106, 0.55);
 }
@@ -617,10 +607,31 @@ button {
 }
 
 .badge-PENDING { background: rgba(212, 160, 23, 0.18); color: #8a6a00; }
-.badge-PREPARING { background: rgba(29, 185, 84, 0.16); color: #0f7a35; }
-.badge-READY { background: rgba(26, 158, 74, 0.16); color: #0f6b30; }
-.badge-COMPLETED { background: rgba(26, 158, 74, 0.22); color: #0b5a28; }
+.badge-DONE { background: rgba(26, 158, 74, 0.22); color: #0b5a28; }
 .badge-CANCELLED { background: rgba(214, 69, 69, 0.14); color: #b42318; }
+
+.order-toast {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1200;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  min-width: min(420px, calc(100vw - 2rem));
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: #0f2a18;
+  color: #f4fff7;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.order-toast p {
+  margin: 0.25rem 0 0;
+  opacity: 0.9;
+  font-size: 0.92rem;
+}
 
 /* Auth / Login */
 .login-page {

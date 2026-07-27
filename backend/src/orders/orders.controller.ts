@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '../common/enums';
@@ -56,6 +57,12 @@ export class OrdersController {
   @Roles(UserRole.SUPER_ADMIN, UserRole.CASHIER)
   todaySummary() {
     return this.ordersService.todaySummary();
+  }
+
+  @Get('range/summary')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CASHIER)
+  rangeSummary(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.ordersService.rangeSummary(from, to);
   }
 
   @Get('status-counts')

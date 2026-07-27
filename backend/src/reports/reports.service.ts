@@ -20,7 +20,7 @@ export class ReportsService {
     const orders = await this.ordersRepo.find({
       where: {
         createdAt: Between(start, end),
-        status: OrderStatus.COMPLETED,
+        status: OrderStatus.DONE,
       },
       relations: { items: true },
     });

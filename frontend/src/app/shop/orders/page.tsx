@@ -78,9 +78,7 @@ export default function MyOrdersPage() {
               options={[
                 { value: 'ALL', label: 'All statuses' },
                 { value: 'PENDING', label: 'Pending' },
-                { value: 'PREPARING', label: 'Preparing' },
-                { value: 'READY', label: 'Ready' },
-                { value: 'COMPLETED', label: 'Completed' },
+                { value: 'DONE', label: 'Done' },
                 { value: 'CANCELLED', label: 'Cancelled' },
               ]}
             />

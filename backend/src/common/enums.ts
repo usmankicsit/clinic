@@ -4,11 +4,10 @@ export enum UserRole {
   CUSTOMER = 'CUSTOMER',
 }
 
+/** Staff workflow: Pending → Done (Cancelled optional). */
 export enum OrderStatus {
   PENDING = 'PENDING',
-  PREPARING = 'PREPARING',
-  READY = 'READY',
-  COMPLETED = 'COMPLETED',
+  DONE = 'DONE',
   CANCELLED = 'CANCELLED',
 }
 

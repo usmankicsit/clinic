@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { GlitterCursor } from '@/components/GlitterCursor';
+import { OnlineOrderToast } from '@/lib/use-online-order-alerts';
 
 const staffLinks = [
   { href: '/pos', label: 'POS' },
@@ -26,9 +27,7 @@ const adminLinks = [
 
 interface StatusBucket {
   PENDING: number;
-  PREPARING: number;
-  READY: number;
-  COMPLETED: number;
+  DONE: number;
   CANCELLED: number;
   total: number;
   active: number;
@@ -41,9 +40,7 @@ interface StatusCounts {
 
 const emptyBucket = (): StatusBucket => ({
   PENDING: 0,
-  PREPARING: 0,
-  READY: 0,
-  COMPLETED: 0,
+  DONE: 0,
   CANCELLED: 0,
   total: 0,
   active: 0,
@@ -103,15 +100,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const online = counts.online;
 
   const chips = [
-    { key: 'PENDING', label: 'Pending', count: online.PENDING, href: '/online-orders' },
-    { key: 'PREPARING', label: 'Preparing', count: online.PREPARING, href: '/online-orders' },
-    { key: 'READY', label: 'Ready', count: online.READY, href: '/online-orders' },
-    { key: 'COMPLETED', label: 'Completed', count: online.COMPLETED, href: '/online-orders' },
+    {
+      key: 'PENDING',
+      label: 'Pending',
+      count: online.PENDING || 0,
+      href: '/online-orders',
+    },
+    {
+      key: 'DONE',
+      label: 'Done',
+      count: online.DONE || 0,
+      href: '/online-orders',
+    },
   ];
 
   return (
     <div className="app-shell">
       <GlitterCursor />
+      <OnlineOrderToast enabled={isStaff} />
       <aside className="sidebar">
         <div className="brand">
           Bait Al Shifa
@@ -147,7 +153,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="top-navbar">
           <div className="top-navbar-label">
             <strong>Online orders today</strong>
-            <span>{online.active} active · {online.total} total</span>
+            <span>
+              {online.active} pending · {online.total} total
+            </span>
           </div>
           <div className="status-chips">
             {chips.map((chip) => (

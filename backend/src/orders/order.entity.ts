@@ -22,7 +22,7 @@ export class Order {
   orderNumber: string;
 
   @Index()
-  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+  @Column({ type: 'varchar', length: 32, default: OrderStatus.PENDING })
   status: OrderStatus;
 
   @Index()

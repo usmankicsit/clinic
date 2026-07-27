@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, DataSource, Repository } from 'typeorm';
 import { OrderSource, OrderStatus, UserRole } from '../common/enums';
 import { Inventory } from '../inventory/inventory.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Product } from '../products/product.entity';
 import { ShopSettings } from '../shop/shop-settings.entity';
 import { User } from '../users/user.entity';
@@ -21,17 +22,27 @@ export class OrdersService {
     @InjectRepository(Order)
     private readonly ordersRepo: Repository<Order>,
     private readonly dataSource: DataSource,
+    private readonly notifications: NotificationsService,
   ) {}
 
-  private startOfToday() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+  private startOfDay(d = new Date()) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
   }
 
-  private endOfToday() {
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
+  private endOfDay(d = new Date()) {
+    const x = new Date(d);
+    x.setHours(23, 59, 59, 999);
+    return x;
+  }
+
+  private parseDay(value?: string) {
+    if (!value) return new Date();
+    const d = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(d.getTime())) {
+      throw new BadRequestException('Invalid date');
+    }
     return d;
   }
 
@@ -42,7 +53,7 @@ export class OrdersService {
     const source =
       user.role === UserRole.CUSTOMER ? OrderSource.ONLINE : OrderSource.POS;
 
-    return this.dataSource.transaction(async (manager) => {
+    const saved = await this.dataSource.transaction(async (manager) => {
       const settings = await manager.findOne(ShopSettings, { where: {} });
       const taxPercent = Number(settings?.taxPercent ?? 0);
 
@@ -116,13 +127,24 @@ export class OrdersService {
         }),
       );
     });
+
+    if (saved && source === OrderSource.ONLINE) {
+      await this.notifications.notifyOnlineOrder(saved);
+    }
+
+    return saved;
   }
 
-  findToday(source?: OrderSource) {
+  findInRange(from?: string, to?: string, source?: OrderSource) {
+    const start = this.startOfDay(this.parseDay(from));
+    const end = this.endOfDay(this.parseDay(to || from));
+    if (end < start) {
+      throw new BadRequestException('"to" must be on or after "from"');
+    }
     return this.ordersRepo
       .find({
         where: {
-          createdAt: Between(this.startOfToday(), this.endOfToday()),
+          createdAt: Between(start, end),
           ...(source ? { source } : {}),
         },
         relations: { items: true, createdBy: true },
@@ -131,23 +153,17 @@ export class OrdersService {
       .then((orders) => this.sanitizeOrders(orders));
   }
 
+  findToday(source?: OrderSource) {
+    return this.findInRange(undefined, undefined, source);
+  }
+
   findOnlineActive() {
     return this.ordersRepo
       .find({
-        where: [
-          {
-            source: OrderSource.ONLINE,
-            status: OrderStatus.PENDING,
-          },
-          {
-            source: OrderSource.ONLINE,
-            status: OrderStatus.PREPARING,
-          },
-          {
-            source: OrderSource.ONLINE,
-            status: OrderStatus.READY,
-          },
-        ],
+        where: {
+          source: OrderSource.ONLINE,
+          status: OrderStatus.PENDING,
+        },
         relations: { items: true, createdBy: true },
         order: { createdAt: 'ASC' },
       })
@@ -197,51 +213,58 @@ export class OrdersService {
     return this.sanitizeOrder(order);
   }
 
-  async todaySummary() {
-    const orders = await this.findToday();
+  async rangeSummary(from?: string, to?: string) {
+    const orders = await this.findInRange(from, to);
     const active = orders.filter((o) => o.status !== OrderStatus.CANCELLED);
     const revenue = active.reduce((sum, o) => sum + Number(o.total), 0);
     return {
       orderCount: active.length,
       revenue: Math.round(revenue * 100) / 100,
       orders,
+      from: from || new Date().toISOString().slice(0, 10),
+      to: to || from || new Date().toISOString().slice(0, 10),
     };
+  }
+
+  async todaySummary() {
+    return this.rangeSummary();
   }
 
   async statusCounts() {
     const today = await this.findToday();
     const onlineToday = today.filter((o) => o.source === OrderSource.ONLINE);
-    const allToday = today;
 
     const countByStatus = (orders: Order[]) => {
       const counts: Record<string, number> = {
         PENDING: 0,
-        PREPARING: 0,
-        READY: 0,
-        COMPLETED: 0,
+        DONE: 0,
         CANCELLED: 0,
       };
       for (const order of orders) {
-        counts[order.status] = (counts[order.status] || 0) + 1;
+        const key =
+          order.status === OrderStatus.PENDING
+            ? 'PENDING'
+            : order.status === OrderStatus.CANCELLED
+              ? 'CANCELLED'
+              : 'DONE';
+        counts[key] = (counts[key] || 0) + 1;
       }
       return counts;
     };
 
     const online = countByStatus(onlineToday);
-    const overall = countByStatus(allToday);
+    const overall = countByStatus(today);
 
     return {
       online: {
         ...online,
         total: onlineToday.length,
-        active:
-          online.PENDING + online.PREPARING + online.READY,
+        active: online.PENDING,
       },
       today: {
         ...overall,
-        total: allToday.length,
-        active:
-          overall.PENDING + overall.PREPARING + overall.READY,
+        total: today.length,
+        active: overall.PENDING,
       },
     };
   }

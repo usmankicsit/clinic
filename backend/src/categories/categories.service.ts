@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Product } from '../products/product.entity';
 import { Category } from './category.entity';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 
@@ -9,6 +14,8 @@ export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private readonly categoriesRepo: Repository<Category>,
+    @InjectRepository(Product)
+    private readonly productsRepo: Repository<Product>,
   ) {}
 
   findAll(activeOnly = false) {
@@ -37,5 +44,19 @@ export class CategoriesService {
     const category = await this.findOne(id);
     Object.assign(category, dto);
     return this.categoriesRepo.save(category);
+  }
+
+  async remove(id: string) {
+    const category = await this.findOne(id);
+    const productCount = await this.productsRepo.count({
+      where: { categoryId: id },
+    });
+    if (productCount > 0) {
+      throw new BadRequestException(
+        'Cannot delete category that still has products. Move or delete products first.',
+      );
+    }
+    await this.categoriesRepo.remove(category);
+    return { ok: true };
   }
 }
