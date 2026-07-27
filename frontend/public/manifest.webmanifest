@@ -1,0 +1,33 @@
+{
+  "name": "Bait Al Shifa Natural Herbs",
+  "short_name": "Bait Al Shifa",
+  "description": "Herbal wellness clinic POS, online ordering, and staff tools",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3faf4",
+  "theme_color": "#1db954",
+  "lang": "en",
+  "categories": ["business", "health", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
