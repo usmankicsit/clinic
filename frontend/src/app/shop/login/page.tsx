@@ -8,20 +8,9 @@ import {
   AuthLink,
   AuthLinks,
   AuthShell,
-  DemoAccountPicker,
-  type DemoAccount,
 } from '@/components/AuthShell';
 import { homeForRole, useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
-
-const CUSTOMER_ACCOUNT: DemoAccount[] = [
-  {
-    label: 'Demo patient',
-    hint: 'Try ordering now',
-    email: 'patient@clinic.health',
-    password: 'Customer123!',
-  },
-];
 
 function ShopLoginForm() {
   const { login, user, loading } = useAuth();
@@ -77,15 +66,6 @@ function ShopLoginForm() {
         </AuthLinks>
       }
     >
-      <DemoAccountPicker
-        accounts={CUSTOMER_ACCOUNT}
-        activeEmail={email}
-        onPick={(account) => {
-          setEmail(account.email);
-          setPassword(account.password);
-          setError('');
-        }}
-      />
       <AuthForm
         onSubmit={onSubmit}
         submitLabel="Sign in"

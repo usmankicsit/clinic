@@ -8,26 +8,9 @@ import {
   AuthLink,
   AuthLinks,
   AuthShell,
-  DemoAccountPicker,
-  type DemoAccount,
 } from '@/components/AuthShell';
 import { homeForRole, useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
-
-const STAFF_ACCOUNTS: DemoAccount[] = [
-  {
-    label: 'Admin',
-    hint: 'Full clinic control',
-    email: 'admin@clinic.health',
-    password: 'Admin123!',
-  },
-  {
-    label: 'Staff',
-    hint: 'POS & orders',
-    email: 'staff@clinic.health',
-    password: 'Cashier123!',
-  },
-];
 
 export default function LoginPage() {
   const { login, user, loading } = useAuth();
@@ -79,15 +62,6 @@ export default function LoginPage() {
         </AuthLinks>
       }
     >
-      <DemoAccountPicker
-        accounts={STAFF_ACCOUNTS}
-        activeEmail={email}
-        onPick={(account) => {
-          setEmail(account.email);
-          setPassword(account.password);
-          setError('');
-        }}
-      />
       <AuthForm
         onSubmit={onSubmit}
         submitLabel="Sign in to workspace"
